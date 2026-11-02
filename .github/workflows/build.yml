@@ -33,10 +33,10 @@ jobs:
           - runner: windows-latest
             rid: win-x64
             architecture: X64
-          - runner: ubuntu-22.04
+          - runner: ubuntu-latest
             rid: linux-x64
             architecture: X64
-          - runner: macos-15
+          - runner: macos-latest
             rid: osx-arm64
             architecture: Arm64
     defaults:
@@ -111,7 +111,7 @@ jobs:
     name: Publish release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: build
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
