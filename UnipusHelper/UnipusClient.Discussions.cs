@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 public sealed partial class UnipusClient
 {

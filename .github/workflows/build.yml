@@ -76,7 +76,7 @@ jobs:
         env:
           TARGET_RID: ${{ matrix.rid }}
         run: |
-          $filename = if ($IsWindows) { 'UnipusHelp.exe' } else { 'UnipusHelp' }
+          $filename = if ($IsWindows) { 'UnipusHelper.exe' } else { 'UnipusHelper' }
           $executable = Join-Path $PWD "artifacts/$env:TARGET_RID/$filename"
           $version = & $executable --version
           if ($LASTEXITCODE -ne 0 -or $version -notmatch 'Native AOT: True') {

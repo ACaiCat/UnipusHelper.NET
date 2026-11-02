@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 public static class Program
 {
@@ -41,12 +41,12 @@ public static class Program
         if (args.Contains("--diagnose")) return await Diagnostics.RunAsync();
         if (args.Contains("--help") || args.Contains("-h"))
         {
-            Console.WriteLine("UnipusHelp.NET\n  无参数          终端任务管理器\n  --proxy URL     HTTP / SOCKS 代理\n  --demo          离线演示界面\n  --demo --run    无交互离线验证\n  --version       版本信息\nTab 切换控件，方向键选择，Enter 确认，Esc 关闭窗口。");
+            Console.WriteLine("UnipusHelper.NET\n  无参数          终端任务管理器\n  --proxy URL     HTTP / SOCKS 代理\n  --demo          离线演示界面\n  --demo --run    无交互离线验证\n  --version       版本信息\nTab 切换控件，方向键选择，Enter 确认，Esc 关闭窗口。");
             return 0;
         }
         if (args.Contains("--version"))
         {
-            Console.WriteLine($"UnipusHelp.NET 1.0.0 | Native AOT: {!RuntimeFeature.IsDynamicCodeSupported}");
+            Console.WriteLine($"UnipusHelper.NET 1.0.0 | Native AOT: {!RuntimeFeature.IsDynamicCodeSupported}");
             return 0;
         }
         var demo = args.Contains("--demo");

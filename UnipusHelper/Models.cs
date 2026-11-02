@@ -1,4 +1,4 @@
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 public sealed record JobLog(DateTimeOffset Time, string Message, bool IsError)
 {

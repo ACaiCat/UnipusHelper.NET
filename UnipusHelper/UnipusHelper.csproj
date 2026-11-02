@@ -8,7 +8,7 @@
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <IlcTreatWarningsAsErrors>true</IlcTreatWarningsAsErrors>
-    <AssemblyName>UnipusHelp</AssemblyName>
+    <AssemblyName>UnipusHelper</AssemblyName>
     <Version>1.0.0</Version>
   </PropertyGroup>
   <ItemGroup>

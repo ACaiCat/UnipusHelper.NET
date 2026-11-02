@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 // All protocol JSON uses the DOM, avoiding reflection-based serialization in Native AOT.
 public static class Json

@@ -6,12 +6,12 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $publishDirectory = Join-Path $projectRoot "artifacts/$Runtime"
 $distDirectory = Join-Path $projectRoot 'dist'
-$filename = if ($Runtime -eq 'win-x64') { 'UnipusHelp.exe' } else { 'UnipusHelp' }
+$filename = if ($Runtime -eq 'win-x64') { 'UnipusHelper.exe' } else { 'UnipusHelper' }
 if (!(Test-Path -LiteralPath (Join-Path $publishDirectory $filename))) {
     throw "Publish output missing: $publishDirectory/$filename"
 }
 
-$bundleName = "UnipusHelp-$Version-$Runtime"
+$bundleName = "UnipusHelper-$Version-$Runtime"
 $stagingRoot = Join-Path $projectRoot "artifacts/package-$([Guid]::NewGuid().ToString('N'))"
 $bundleDirectory = Join-Path $stagingRoot $bundleName
 New-Item -ItemType Directory -Path $bundleDirectory, $distDirectory -Force | Out-Null

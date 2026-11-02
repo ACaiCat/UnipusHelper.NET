@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using UnipusHelp.Speech;
+using UnipusHelper.Speech;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 public sealed class LearningJob : IDisposable
 {

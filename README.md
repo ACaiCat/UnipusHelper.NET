@@ -1,10 +1,13 @@
-# UnipusHelp.NET
+# UnipusHelper.NET
 
 U校园AI版自动答题工具（新视野大学英语）
 
 原项目：[UnipusHelperPro](https://github.com/Duster-Cule/UnipusHelperPro)
 
-<font color="red">请不要在国内任何公众平台传播此项目，避免引起不必要的麻烦。</font>
+> [!CAUTION]
+> 请不要在国内任何公众平台传播此项目，避免引起不必要的麻烦
+
+## 支持的题型
 
 已支持绝大部分题型，剩余题型有可能会在之后的版本支持。
 

@@ -1,4 +1,4 @@
-namespace UnipusHelp.Speech;
+namespace UnipusHelper.Speech;
 
 public enum SpeechKind { Word, Sentence, Paragraph, PersonalStatement }
 public sealed record SpeechPart(string ReferenceText, int MaximumMilliseconds, SpeechKind Kind);

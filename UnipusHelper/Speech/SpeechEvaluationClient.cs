@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 
-namespace UnipusHelp.Speech;
+namespace UnipusHelper.Speech;
 
 public sealed class SpeechEvaluationClient : ISpeechEvaluation
 {

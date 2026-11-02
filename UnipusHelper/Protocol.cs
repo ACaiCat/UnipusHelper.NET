@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 public static partial class Protocol
 {

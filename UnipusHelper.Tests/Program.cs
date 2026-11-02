@@ -1,9 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
-using UnipusHelp;
-using UnipusHelp.Speech;
-using App = UnipusHelp.Program;
+using UnipusHelper;
+using UnipusHelper.Speech;
+using App = UnipusHelper.Program;
 
 var passed = 0;
 await Test("AES ECB / zero padding / plaintext passthrough", () =>

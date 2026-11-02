@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
-using UnipusHelp.Speech;
+using UnipusHelper.Speech;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 public sealed partial class UnipusClient
 {

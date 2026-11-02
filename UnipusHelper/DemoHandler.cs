@@ -1,8 +1,8 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 // Deliberately local: the demo never opens a network connection.
 public sealed class DemoHandler : HttpMessageHandler

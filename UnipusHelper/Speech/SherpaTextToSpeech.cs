@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Diagnostics;
 using SherpaOnnx;
 
-namespace UnipusHelp.Speech;
+namespace UnipusHelper.Speech;
 
 public sealed record PcmAudio(byte[] Samples, int SampleRate)
 {
@@ -41,7 +41,7 @@ public sealed class SherpaTextToSpeech : ITextToSpeech
     private readonly SemaphoreSlim gate = new(1, 1);
     private OfflineTts? engine;
     private static string BundledModelDirectory => Path.Combine(AppContext.BaseDirectory, "tts", ModelName);
-    private static string CachedModelDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UnipusHelp.NET", "tts", ModelName);
+    private static string CachedModelDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UnipusHelper.NET", "tts", ModelName);
     public static string ModelDirectory => IsModelAvailable(BundledModelDirectory) ? BundledModelDirectory : CachedModelDirectory;
 
     private static bool IsModelAvailable(string directory) =>

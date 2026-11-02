@@ -10,7 +10,7 @@ using Terminal.Gui.Views;
 using Color = Terminal.Gui.Drawing.Color;
 using Attribute = Terminal.Gui.Drawing.Attribute;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 public static class TuiApplication
 {
@@ -28,7 +28,7 @@ public static class TuiApplication
     {
         using var app = CreateApplication();
         ConfigureColors();
-        using var window = new Window { Title = "UnipusHelp.NET", SchemeName = BaseScheme, BorderStyle = LineStyle.Rounded };
+        using var window = new Window { Title = "UnipusHelper.NET", SchemeName = BaseScheme, BorderStyle = LineStyle.Rounded };
         var header = new Label { Text = "学习任务", X = 1, Y = 0, SchemeName = AccentScheme };
         var count = new Label { X = Pos.AnchorEnd(23), Y = 0, Width = 22, Text = "暂无运行任务" };
         var toolbar = new View { X = 1, Y = 2, Width = Dim.Fill(1), Height = 1, CanFocus = true };
@@ -172,7 +172,7 @@ public static class TuiApplication
         window.IsRunningChanging += (_, e) =>
         {
             if (!e.NewValue && !smoke && !ct.IsCancellationRequested)
-                e.Cancel = !Confirm("退出程序", $"确定退出 UnipusHelp.NET？\n{jobs.Count(x => x.Execution?.IsCompleted == false)} 个进行中的任务将停止。");
+                e.Cancel = !Confirm("退出程序", $"确定退出 UnipusHelper.NET？\n{jobs.Count(x => x.Execution?.IsCompleted == false)} 个进行中的任务将停止。");
         };
         window.KeyDown += (_, key) =>
         {

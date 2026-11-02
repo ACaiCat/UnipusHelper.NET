@@ -1,4 +1,4 @@
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 // One endpoint per operation; only typed models cross this boundary.
 public interface IUnipusApi : IDisposable

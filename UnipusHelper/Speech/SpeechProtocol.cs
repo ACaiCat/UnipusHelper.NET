@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace UnipusHelp.Speech;
+namespace UnipusHelper.Speech;
 
 public static class SpeechProtocol
 {

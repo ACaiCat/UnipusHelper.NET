@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 public sealed partial class UnipusClient : IUnipusApi
 {
@@ -18,7 +18,7 @@ public sealed partial class UnipusClient : IUnipusApi
             handler = transport;
         }
         http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(40) };
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("UnipusHelp.NET/1.0");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("UnipusHelper.NET/1.0");
     }
 
     public async Task<LoginResult> LoginAsync(LoginRequest request, CancellationToken ct)

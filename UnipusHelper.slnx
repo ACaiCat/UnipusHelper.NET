@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="UnipusHelper/UnipusHelper.csproj" />
+  <Project Path="UnipusHelper.Tests/UnipusHelper.Tests.csproj" />
+</Solution>

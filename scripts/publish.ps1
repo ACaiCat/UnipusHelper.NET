@@ -1,7 +1,7 @@
 param([string]$Runtime = 'win-x64')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$project = Join-Path $projectRoot 'UnipusHelp/UnipusHelp.csproj'
+$project = Join-Path $projectRoot 'UnipusHelper/UnipusHelper.csproj'
 $destination = Join-Path $projectRoot "artifacts/$Runtime"
 dotnet publish $project -c Release -r $Runtime -o $destination
 if ($LASTEXITCODE -ne 0) { throw 'Native AOT 编译失败。' }

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace UnipusHelp;
+namespace UnipusHelper;
 
 internal static class Diagnostics
 {
