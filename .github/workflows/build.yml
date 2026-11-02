@@ -1,0 +1,145 @@
+name: Native AOT build and release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+jobs:
+  build:
+    name: Build ${{ matrix.rid }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            rid: win-x64
+            architecture: X64
+          - runner: ubuntu-22.04
+            rid: linux-x64
+            architecture: X64
+          - runner: macos-15
+            rid: osx-arm64
+            architecture: Arm64
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Linux native build prerequisites
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang zlib1g-dev
+
+      - name: Verify runner architecture
+        env:
+          EXPECTED_ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          $actual = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+          if ($actual -ne $env:EXPECTED_ARCHITECTURE) {
+            throw "Expected $env:EXPECTED_ARCHITECTURE runner, got $actual"
+          }
+
+      - name: Run checks
+        run: ./scripts/test.ps1
+
+      - name: Publish Native AOT
+        env:
+          TARGET_RID: ${{ matrix.rid }}
+        run: ./scripts/publish.ps1 -Runtime $env:TARGET_RID
+
+      - name: Verify native executable
+        env:
+          TARGET_RID: ${{ matrix.rid }}
+        run: |
+          $filename = if ($IsWindows) { 'UnipusHelp.exe' } else { 'UnipusHelp' }
+          $executable = Join-Path $PWD "artifacts/$env:TARGET_RID/$filename"
+          $version = & $executable --version
+          if ($LASTEXITCODE -ne 0 -or $version -notmatch 'Native AOT: True') {
+            throw "Native AOT validation failed: $version"
+          }
+          Write-Output $version
+          & $executable --demo --run
+          if ($LASTEXITCODE -ne 0) { throw 'Native offline check failed' }
+          $ttsOutput = & $executable --tts-test (Join-Path $env:RUNNER_TEMP 'tts-test.wav')
+          if ($LASTEXITCODE -ne 0) { throw 'Native TTS check failed' }
+          Write-Output $ttsOutput
+          if (($ttsOutput -join "`n") -notmatch '随包模型') {
+            throw 'TTS did not load the bundled model'
+          }
+
+      - name: Package
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          TARGET_RID: ${{ matrix.rid }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: ./scripts/package.ps1 -Runtime $env:TARGET_RID -Version $env:RELEASE_TAG
+
+      - uses: actions/upload-artifact@v6
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: release-${{ matrix.rid }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          test "$(find . -maxdepth 1 -type f | wc -l)" -eq 3
+          sha256sum * > SHA256SUMS
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_TAG" dist/* \
+            --repo "$GH_REPO" \
+            --verify-tag \
+            --title "$RELEASE_TAG" \
+            --generate-notes
