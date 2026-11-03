@@ -93,7 +93,8 @@ public sealed partial class UnipusClient : IUnipusApi
     {
         var data = await MainAsync("api/tla/learningDetail/studyRecord/totalAndUnitSituation" + Query(("id", request.ResourceId), ("appUserId", request.AppUserId)), ct);
         var value = data.Need("value");
-        return new CourseProgress(value.Need("totalDetail").Need("finishProgress").Number(), value.Need("unitList").Items().Select(x =>
+        // Courses without study records return totalDetail: {} and omit unit progress.
+        return new CourseProgress(value.Need("totalDetail")["finishProgress"].Number(), value.Need("unitList").Items().Select(x =>
             new UnitProgress(x.RequiredText("nodeId"), x["caption"].Text(), x["name"].Text(), x["finishProgress"].Number())).ToArray());
     }
 

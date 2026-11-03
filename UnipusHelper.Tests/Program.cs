@@ -139,6 +139,36 @@ await Test("Typed RPC methods map course, strategies, timings and answer models"
     var info = await api.GetTaskInfoAsync(new(resource.CourseInstanceId, "task-choice", "1", user.OpenId), default);
     Equal(1, info.Questions[0].QuestionType);
 });
+await Test("Course progress accepts absent or null percentages and preserves recorded values", async () =>
+{
+    foreach (var total in new[] { "{}", "{\"finishProgress\":null}", "{\"finishProgress\":20.9}" })
+    {
+        using var api = new UnipusClient(handler: new DemoHandler
+        {
+            FailurePath = "totalAndUnitSituation",
+            FailureBody = $$$"""{"code":1,"value":{"totalDetail":{{{total}}},"unitList":[{"nodeId":"new-unit"},{"nodeId":"null-unit","finishProgress":null},{"nodeId":"done-unit","finishProgress":100}]}}"""
+        });
+        var progress = await api.GetCourseProgressAsync(new("resource", "user"), default);
+        Equal(total.Contains("20.9") ? 20.9 : 0, progress.FinishProgress);
+        Equal(0d, progress.Units[0].FinishProgress);
+        Equal(0d, progress.Units[1].FinishProgress);
+        Equal(100d, progress.Units[2].FinishProgress);
+    }
+});
+await Test("Empty total detail allows a new course job to process its tasks", async () =>
+{
+    var handler = new DemoHandler
+    {
+        FailurePath = "totalAndUnitSituation",
+        FailureBody = """{"code":1,"value":{"totalDetail":{},"unitList":[{"nodeId":"unit-1","caption":"Unit 1","name":"Learning English"}]}}"""
+    };
+    using var job = await CreateJob(handler);
+    job.Start();
+    await job.Execution!.WaitAsync(TimeSpan.FromSeconds(10));
+    Equal(3, handler.SubmitCalls);
+    Equal("执行结束，仍有未完成任务", job.Snapshot().State);
+    Assert(job.Snapshot().Current.Contains("0%"), "missing server progress must not imply completion");
+});
 await Test("Submission wire payload, preset request and empty-answer rejection", async () =>
 {
     var handler = new DemoHandler();
