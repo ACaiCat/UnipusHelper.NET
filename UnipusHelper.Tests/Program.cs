@@ -6,6 +6,77 @@ using UnipusHelper.Speech;
 using App = UnipusHelper.Program;
 
 var passed = 0;
+await Test("Captcha login retries only 1506 and carries verification fields", async () =>
+{
+    using var handler = new CaptchaLoginHandler();
+    using var api = new UnipusClient(handler: handler);
+    var solves = 0;
+    api.SolveLoginCaptchaAsync = _ =>
+    {
+        solves++;
+        return Task.FromResult(new JsonObject { ["captchaCode"] = "Ab12", ["encodeCaptha"] = "encoded", ["username"] = "must-not-override" });
+    };
+    var login = await api.LoginAsync(new("test", "secret"), default);
+    Equal("openid", login.OpenId);
+    Equal(1, solves);
+    Equal(2, handler.Bodies.Count);
+    Equal("test", handler.Bodies[1]["username"].Text());
+    Equal("secret", handler.Bodies[1]["password"].Text());
+    Equal("Ab12", handler.Bodies[1]["captchaCode"].Text());
+    Equal("encoded", handler.Bodies[1]["encodeCaptha"].Text());
+    using var wrongPassword = new CaptchaLoginHandler { ErrorCode = 1001 };
+    using var rejected = new UnipusClient(handler: wrongPassword) { SolveLoginCaptchaAsync = _ => throw new Exception("Should not prompt") };
+    await ThrowsAsync<UnipusApiException>(() => rejected.LoginAsync(new("test", "bad"), default));
+    using var repeated = new CaptchaLoginHandler { AlwaysFail = true };
+    using var limited = new UnipusClient(handler: repeated) { SolveLoginCaptchaAsync = api.SolveLoginCaptchaAsync };
+    await ThrowsAsync<UnipusApiException>(() => limited.LoginAsync(new("test", "bad"), default));
+    Equal(4, repeated.Bodies.Count);
+    using var cancelled = new UnipusClient(handler: new CaptchaLoginHandler())
+    {
+        SolveLoginCaptchaAsync = _ => Task.FromCanceled<JsonObject>(new CancellationToken(true))
+    };
+    await ThrowsAsync<OperationCanceledException>(() => cancelled.LoginAsync(new("test", "secret"), default));
+});
+await Test("Browser captcha protects callbacks, proxies fixed routes and returns user result", async () =>
+{
+    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+    var opened = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+    var proxied = new List<string>();
+    var solve = LoginCaptchaBrowser.SolveAsync((route, body, _) =>
+    {
+        proxied.Add(route);
+        return Task.FromResult<JsonNode>(new JsonObject { ["code"] = "0" });
+    }, url => opened.SetResult(url), timeout.Token, _ => { });
+    var url = await opened.Task;
+    using var browser = new HttpClient();
+    var page = await browser.GetStringAsync(url, timeout.Token);
+    Assert(page.Contains("ssoImgCaptcha"), "image fallback missing");
+    using var forbidden = await browser.PostAsync(url + "complete", new StringContent("{}"), timeout.Token);
+    Equal(System.Net.HttpStatusCode.Forbidden, forbidden.StatusCode);
+    using var register = new HttpRequestMessage(HttpMethod.Get, url + "register");
+    register.Headers.Referrer = new Uri(url);
+    using var registered = await browser.SendAsync(register, timeout.Token);
+    registered.EnsureSuccessStatusCode();
+    Equal("sso/5.0/sso/register", proxied.Single());
+    using var image = new HttpRequestMessage(HttpMethod.Post, new Uri(new Uri(url), "/sso/4.0/sso/cip/image_captcha2"));
+    image.Headers.Referrer = new Uri(url);
+    image.Content = new StringContent("{\"param\":\"encrypted\"}", Encoding.UTF8, "application/json");
+    using var imageResponse = await browser.SendAsync(image, timeout.Token);
+    imageResponse.EnsureSuccessStatusCode();
+    Equal("sso/4.0/sso/cip/image_captcha2", proxied.Last());
+    using var callback = new HttpRequestMessage(HttpMethod.Post, url + "complete");
+    callback.Headers.Referrer = new Uri(url);
+    callback.Headers.Add("Origin", new Uri(url).GetLeftPart(UriPartial.Authority));
+    callback.Content = new StringContent("{\"challenge\":\"c\",\"validate\":\"v\",\"seccode\":\"s\"}", Encoding.UTF8, "application/json");
+    using var done = await browser.SendAsync(callback, timeout.Token);
+    done.EnsureSuccessStatusCode();
+    var solution = await solve;
+    Equal("v", solution["validate"].Text());
+    using var cancellation = new CancellationTokenSource();
+    var waiting = LoginCaptchaBrowser.SolveAsync((_, _, _) => throw new Exception(), _ => { }, cancellation.Token, _ => { });
+    cancellation.Cancel();
+    await ThrowsAsync<OperationCanceledException>(async () => await waiting);
+});
 await Test("AES ECB / zero padding / plaintext passthrough", () =>
 {
     const string plain = "[{\"id\":1,\"text\":\"中文\"}]";
@@ -573,6 +644,20 @@ static async Task<LearningJob> CreateJob(DemoHandler handler, LearningOptions? o
 sealed class RejectingSynchronizationContext : SynchronizationContext
 {
     public override void Post(SendOrPostCallback callback, object? state) => throw new InvalidOperationException("UI context must not be captured by a job");
+}
+
+sealed class CaptchaLoginHandler : HttpMessageHandler
+{
+    public List<JsonObject> Bodies { get; } = [];
+    public int ErrorCode { get; init; } = 1506;
+    public bool AlwaysFail { get; init; }
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        Bodies.Add(Json.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).AsObject());
+        var text = Bodies.Count == 1 || AlwaysFail ? new JsonObject { ["code"] = ErrorCode, ["msg"] = "需要验证码" }.ToJsonString() :
+            """{"code":"0","rs":{"openid":"openid","jwt":"jwt"}}""";
+        return new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent(text, Encoding.UTF8, "application/json") };
+    }
 }
 
 sealed class FakeSpeech : ITextToSpeech, ISpeechEvaluation

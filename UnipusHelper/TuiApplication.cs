@@ -261,13 +261,17 @@ public static class TuiApplication
         var password = new TextField { X = 12, Y = 3, Width = Dim.Fill(2), Secret = true, SchemeName = BaseScheme };
         var discussionReply = new TextField { X = 12, Y = 5, Width = Dim.Fill(2), SchemeName = BaseScheme };
         var oralScript = new TextField { X = 12, Y = 7, Width = Dim.Fill(2), SchemeName = BaseScheme };
-        var note = new Label { X = 2, Y = 6, Width = Dim.Fill(2), Text = "" };
         var courseFrame = new FrameView { Title = "教程", X = 2, Y = 9, Width = Dim.Fill(2), Height = Dim.Fill(5), BorderStyle = LineStyle.Rounded };
         var courseList = new ListView { Width = Dim.Fill(), Height = Dim.Fill(), SchemeName = BaseScheme };
         courseFrame.Add(courseList);
         var message = new Label { X = 2, Y = Pos.AnchorEnd(4), Width = Dim.Fill(2), Height = 2, SchemeName = ErrorScheme };
         var submit = new Button { Text = "登录", X = 2, Y = Pos.AnchorEnd(1), SchemeName = AccentScheme };
         var close = new Button { Text = "取消", X = Pos.Right(submit) + 2, Y = Pos.Top(submit), SchemeName = AccentScheme };
+        api.SolveLoginCaptchaAsync = token => api.OpenLoginCaptchaAsync(url => app.Invoke(() =>
+        {
+            if (closed) return;
+            message.Text = "请在浏览器完成验证码（5 分钟内）。未打开时访问：\n" + url;
+        }), token);
         close.Accepted += (_, _) => app.RequestStop(dialog);
         account.Accepted += (_, _) => password.SetFocus();
         password.Accepted += (_, _) => submit.InvokeCommand(Command.Accept);
@@ -306,7 +310,7 @@ public static class TuiApplication
                         courses = available;
                         password.Text = "";
                         account.Enabled = password.Enabled = false;
-                        note.Text = $"{user.School} · {user.Name}";
+                        courseFrame.Title = $"教程 · {user.School} · {user.Name}";
                         courseList.SetSource(new ObservableCollection<string>(courses.Select(x => x.Label)));
                         if (courses.Count > 0) courseList.SelectedItem = 0;
                         message.Text = courses.Count == 0 ? "未找到教程。" : "选择教程后点击“开始任务”。";
@@ -325,7 +329,7 @@ public static class TuiApplication
         };
         dialog.Add(new Label { Text = "账号", X = 2, Y = 1 }, account,
             new Label { Text = "密码", X = 2, Y = 3 }, password,
-            new Label { Text = "讨论回复", X = 2, Y = 5 }, discussionReply, note,
+            new Label { Text = "讨论回复", X = 2, Y = 5 }, discussionReply,
             new Label { Text = "口语稿", X = 2, Y = 7 }, oralScript,
             courseFrame, message, submit, close);
         if (preview)

@@ -9,6 +9,10 @@ public sealed partial class UnipusClient : IUnipusApi
     private readonly HttpClient http;
     private string? jwt;
     public Action<string>? OnRequest { get; set; }
+    public Func<CancellationToken, Task<JsonObject>>? SolveLoginCaptchaAsync { get; set; }
+
+    public Task<JsonObject> OpenLoginCaptchaAsync(Action<string> showUrl, CancellationToken ct) =>
+        LoginCaptchaBrowser.SolveAsync((path, body, token) => SendAsync("sso.unipus.cn", path, body, null, token), showUrl, ct);
     public UnipusClient(string? proxy = null, HttpMessageHandler? handler = null)
     {
         if (handler is null)
@@ -23,10 +27,19 @@ public sealed partial class UnipusClient : IUnipusApi
 
     public async Task<LoginResult> LoginAsync(LoginRequest request, CancellationToken ct)
     {
-        var data = await SendAsync("sso.unipus.cn", "sso/0.1/sso/login", new JsonObject
+        var body = new JsonObject
         {
             ["username"] = request.Username, ["password"] = request.Password, ["remember"] = true, ["agreement"] = true, ["service"] = "https://uai.unipus.cn/home"
-        }, null, ct);
+        };
+        var data = await SendAsync("sso.unipus.cn", "sso/0.1/sso/login", body, null, ct);
+        for (var attempt = 0; data["code"].Text() == "1506" && SolveLoginCaptchaAsync is not null && attempt < 3; attempt++)
+        {
+            var solution = await SolveLoginCaptchaAsync(ct);
+            foreach (var key in new[] { "challenge", "seccode", "validate", "captchaCode", "encodeCaptha" }) body.Remove(key);
+            foreach (var (key, value) in solution)
+                if (key is "challenge" or "seccode" or "validate" or "captchaCode" or "encodeCaptha") body[key] = value?.DeepClone();
+            data = await SendAsync("sso.unipus.cn", "sso/0.1/sso/login", body, null, ct);
+        }
         Json.Check(data, 0, "登录");
         var account = data.Need("rs");
         var result = new LoginResult(account.RequiredText("openid"), account["jwt"].Text());
